@@ -9,6 +9,9 @@
 #include "Graph.h"
 #include <iostream>
 #include <algorithm>
+#include <queue>
+#include <stack>
+#include <unordered_set>
 
 // =============================================================================
 // 1. Constructor
@@ -32,7 +35,9 @@ Graph::Graph() {}
 //   - if it exists, do nothing (safe to call multiple times)
 //
 void Graph::add_vertex(const std::string& vertex) {
-    // TODO: insert vertex into adj_list_ if not already present
+    if (adj_list_.find(vertex) == adj_list_.end()) {
+        adj_list_[vertex] = std::vector<std::string>();
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -47,7 +52,11 @@ void Graph::add_vertex(const std::string& vertex) {
 //   - this is why edge_count needs to divide by 2
 //
 void Graph::add_edge(const std::string& from, const std::string& to) {
-    // TODO: ensure both vertices exist, then add each to the other's neighbor list
+    add_vertex(from);
+    add_vertex(to);
+
+    adj_list_[from].push_back(to);
+    adj_list_[to].push_back(from);
 }
 
 // =============================================================================
@@ -55,27 +64,37 @@ void Graph::add_edge(const std::string& from, const std::string& to) {
 // =============================================================================
 
 bool Graph::has_vertex(const std::string& vertex) const {
-    // TODO: check if vertex exists as a key in adj_list_
+	return adj_list_.find(vertex) != adj_list_.end();   
     return false;
 }
 
 bool Graph::has_edge(const std::string& from, const std::string& to) const {
-    // TODO: check if 'to' appears in from's neighbor list
+	auto it = adj_list_.find(from);
+    if (it != adj_list_.end()) {
+        const auto& neighbors = it->second;
+        return std::find(neighbors.begin(), neighbors.end(), to) != neighbors.end();
+	}
     return false;
 }
 
 int Graph::vertex_count() const {
-    // TODO: return number of keys in adj_list_
+	return adj_list_.size();    
     return 0;
 }
 
 int Graph::edge_count() const {
-    // TODO: sum all neighbor list sizes, divide by 2 (undirected)
+	int total_edges = 0;
+    for (const auto& [vertex, neighbors] : adj_list_) {
+        total_edges += neighbors.size();
+	}
     return 0;
 }
 
 std::vector<std::string> Graph::neighbors(const std::string& vertex) const {
-    // TODO: return the neighbor list for vertex (empty vector if not found)
+    auto it = adj_list_.find(vertex);
+    if (it != adj_list_.end()) {
+        return it->second;
+    }
     return {};
 }
 
@@ -98,11 +117,33 @@ std::vector<std::string> Graph::neighbors(const std::string& vertex) const {
 //   - this is why BFS is used in GPS navigation (unweighted) and social
 //     network "degrees of separation"
 //
-std::vector<std::string> Graph::bfs(const std::string& start) const {
-    std::vector<std::string> result;
-    // TODO: implement BFS using a queue and visited set
-    return result;
-}
+    std::vector<std::string> Graph::bfs(const std::string & start) const {
+        std::vector<std::string> result;
+
+        if (!has_vertex(start)) return result;
+
+        std::queue<std::string> q;
+        std::unordered_set<std::string> visited;
+
+        q.push(start);
+        visited.insert(start);
+
+        while (!q.empty()) {
+            std::string current = q.front();
+            q.pop();
+
+            result.push_back(current);
+
+            for (const auto& neighbor : adj_list_.at(current)) {
+                if (visited.find(neighbor) == visited.end()) {
+                    visited.insert(neighbor);
+                    q.push(neighbor);
+                }
+            }
+        }
+
+        return result;
+    }
 
 // =============================================================================
 // 5. DFS — Depth-First Search
@@ -122,11 +163,34 @@ std::vector<std::string> Graph::bfs(const std::string& start) const {
 //   - DFS: cycle detection, topological sort, maze solving, "is there a path?"
 //   - both visit every reachable vertex exactly once: O(V + E)
 //
-std::vector<std::string> Graph::dfs(const std::string& start) const {
-    std::vector<std::string> result;
-    // TODO: implement DFS using a stack and visited set
-    return result;
-}
+    std::vector<std::string> Graph::dfs(const std::string& start) const {
+        std::vector<std::string> result;
+
+        if (!has_vertex(start)) return result;
+
+        std::stack<std::string> s;
+        std::unordered_set<std::string> visited;
+
+        s.push(start);
+
+        while (!s.empty()) {
+            std::string current = s.top();
+            s.pop();
+
+            if (visited.find(current) != visited.end()) continue;
+
+            visited.insert(current);
+            result.push_back(current);
+
+            for (const auto& neighbor : adj_list_.at(current)) {
+                if (visited.find(neighbor) == visited.end()) {
+                    s.push(neighbor);
+                }
+            }
+        }
+
+        return result;
+    }
 
 // =============================================================================
 // 6. print — display adjacency list
