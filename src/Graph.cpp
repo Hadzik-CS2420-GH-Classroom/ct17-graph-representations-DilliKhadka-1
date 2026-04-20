@@ -87,7 +87,7 @@ int Graph::edge_count() const {
     for (const auto& [vertex, neighbors] : adj_list_) {
         total_edges += neighbors.size();
 	}
-    return 0;
+    return total_edges / 2; 
 }
 
 std::vector<std::string> Graph::neighbors(const std::string& vertex) const {
